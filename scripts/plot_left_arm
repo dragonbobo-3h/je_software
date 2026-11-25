@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+import sys
+
+from je_software.plot_left_arm import main
+
+
+if __name__ == "__main__":
+    sys.exit(main())

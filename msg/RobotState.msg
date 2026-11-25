@@ -1,0 +1,2 @@
+bool cartesian_valid
+geometry_msgs/PoseStamped tcp_pose

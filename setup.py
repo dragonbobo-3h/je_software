@@ -46,6 +46,9 @@ setup(
             'test_publisher = je_software.test_publisher_node:main',
             'replay_node = je_software.replay_node:main',
             'joint_rate_monitor = je_software.joint_rate_monitor_node:main',
+            'zmq_motion_backend_node = je_software.zmq_motion_backend_node:main',
+            'charuco_camera_calibration = je_software.charuco_camera_calibration_node:main',
+            'tcp_calibration = je_software.tcp_calibration_node:main',
         ],
     },
 )

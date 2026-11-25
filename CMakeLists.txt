@@ -99,6 +99,7 @@ endif()
 list(REMOVE_DUPLICATES JE_ZMQ_INCLUDE_DIRS)
 
 find_package(nlohmann_json REQUIRED)
+find_package(ruckig REQUIRED CONFIG)
 find_package(Eigen3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
@@ -131,10 +132,14 @@ install(PROGRAMS
   scripts/orbbec_intrinsics_validator
   scripts/plot_dynamixel_positions
   scripts/joint_rate_monitor
+  scripts/plot_left_arm
   scripts/manager_node
   scripts/replay_node
   scripts/tactile_sensor
   scripts/test_publisher
+  scripts/zmq_motion_backend_node
+  scripts/tcp_calibration
+  scripts/charuco_camera_calibration
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -144,6 +149,9 @@ install(PROGRAMS
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/EndEffectorCommand.msg"
   "msg/EndEffectorCommandLR.msg"
+  "msg/RobotState.msg"
+  "srv/GetRobotState.srv"
+  DEPENDENCIES geometry_msgs
   SKIP_GROUP_MEMBERSHIP_CHECK
 )
 
@@ -231,14 +239,17 @@ ament_target_dependencies(je_software_hardware
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  common
 )
 target_include_directories(je_software_hardware
   PRIVATE
+    ${common_INCLUDE_DIRS}
     ${JE_ZMQ_INCLUDE_DIRS}
 )
 target_link_libraries(je_software_hardware
   PkgConfig::ZMQ
   nlohmann_json::nlohmann_json
+  ruckig::ruckig
   ${cpp_typesupport_target}
 )
 

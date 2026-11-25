@@ -281,9 +281,20 @@ class EyeToHandCalibrationNode(Node):
         self.marker_length_m = float(self.get_parameter('marker_length_m').value)
         self.aruco_dictionary_name = str(self.get_parameter('aruco_dictionary').value).strip()
         self.min_charuco_corners = int(self.get_parameter('min_charuco_corners').value)
+        self.custom_intrinsics_path = str(
+            self.get_parameter('custom_intrinsics_path').value
+        ).strip()
 
         self._load_charuco_config_if_needed()
         self._validate_parameters()
+
+        self.camera_matrix: np.ndarray | None = None
+        self.dist_coeffs: np.ndarray | None = None
+        self.camera_info_snapshot: dict[str, Any] = {}
+        self.camera_frame_id = ''
+        self._custom_intrinsics_loaded = False
+
+        self._load_custom_intrinsics_if_needed()
 
         self.aruco_dictionary_id = self._resolve_aruco_dictionary_id(self.aruco_dictionary_name)
         self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(self.aruco_dictionary_id)
@@ -297,10 +308,6 @@ class EyeToHandCalibrationNode(Node):
         self.images_dir = self.session_dir / 'images'
         self.images_dir.mkdir(parents=True, exist_ok=True)
 
-        self.camera_matrix: np.ndarray | None = None
-        self.dist_coeffs: np.ndarray | None = None
-        self.camera_info_snapshot: dict[str, Any] = {}
-        self.camera_frame_id = ''
         self.pose_frame_id = ''
         self.pose_buffer: deque[PoseSnapshot] = deque(maxlen=400)
         self.samples: list[CapturedSample] = []
@@ -380,6 +387,7 @@ class EyeToHandCalibrationNode(Node):
         self.declare_parameter('marker_length_m', 0.03)
         self.declare_parameter('aruco_dictionary', 'DICT_4X4_50')
         self.declare_parameter('min_charuco_corners', 8)
+        self.declare_parameter('custom_intrinsics_path', '')
 
     def _validate_parameters(self) -> None:
         if self.arm not in ('left', 'right'):
@@ -439,6 +447,61 @@ class EyeToHandCalibrationNode(Node):
         )
         self.aruco_dictionary_name = str(config['dictionary']).strip()
         self.charuco_config_path = str(config_path)
+
+    def _load_custom_intrinsics_if_needed(self) -> None:
+        if not self.custom_intrinsics_path:
+            return
+
+        intrinsics_path = Path(self.custom_intrinsics_path).expanduser()
+        if not intrinsics_path.is_file():
+            raise FileNotFoundError(
+                f'Custom intrinsics file not found: {intrinsics_path}'
+            )
+
+        with intrinsics_path.open('r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        cm = data['camera_matrix']
+        if 'k' in cm:
+            k = np.asarray(cm['k'], dtype=np.float64).reshape(3, 3)
+        else:
+            k = np.array([
+                [cm['fx'], 0.0, cm['cx']],
+                [0.0, cm['fy'], cm['cy']],
+                [0.0, 0.0, 1.0],
+            ], dtype=np.float64)
+
+        dc = data['distortion_coefficients']
+        if 'd' in dc:
+            d = np.asarray(dc['d'], dtype=np.float64).reshape(-1, 1)
+        else:
+            d = np.array([
+                [dc['k1']], [dc['k2']], [dc['p1']], [dc['p2']], [dc['k3']],
+            ], dtype=np.float64)
+
+        self.camera_matrix = k
+        self.dist_coeffs = d
+        self._custom_intrinsics_loaded = True
+
+        frame_size = data.get('frame_size', None)
+        frame_str = f"{frame_size[0]}x{frame_size[1]}" if frame_size else "?"
+        self.camera_info_snapshot = {
+            'frame_id': '',
+            'width': frame_size[0] if frame_size else 0,
+            'height': frame_size[1] if frame_size else 0,
+            'distortion_model': 'plumb_bob',
+            'k': k.flatten().tolist(),
+            'd': d.flatten().tolist(),
+            'p': [0.0] * 12,
+            'used_rectified_model': False,
+            'source': str(intrinsics_path),
+        }
+        self.get_logger().info(
+            f'Loaded custom intrinsics from {intrinsics_path}: '
+            f'fx={k[0,0]:.2f}, fy={k[1,1]:.2f}, '
+            f'cx={k[0,2]:.2f}, cy={k[1,2]:.2f}, '
+            f'frame={frame_str}'
+        )
 
     def _config_length_to_meters(
         self,
@@ -509,6 +572,9 @@ class EyeToHandCalibrationNode(Node):
         return self.charuco_corner_object_points[ids]
 
     def _camera_info_callback(self, msg: CameraInfo) -> None:
+        if self._custom_intrinsics_loaded:
+            return
+
         if len(msg.k) != 9:
             self.get_logger().warn('Ignoring CameraInfo with invalid K size.')
             return

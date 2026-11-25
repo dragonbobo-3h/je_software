@@ -68,9 +68,9 @@ right_port:=/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0   \
 left_enabled:=true \
 right_enabled:=false   \
 left_models:='["xl330-m288","xl330-m288","xl330-m288","xl330-m077","xl330-m288","xl330-m288","xl330-m288","xl330-m288"]'   \
-right_models:='["xl330-m077","xl330-m077","xl330-m077","xl330-m077","xl330-m077","xl330-m077","xl330-m077","xl330-m077"]'   \
+right_models:='["xl330-m288","xl330-m288","xl330-m288","xl330-m288","xl330-m288","xl330-m288","xl330-m288","xl330-m288"]'   \
 left_signs:="[1,-1,1,-1,1,1,1,1]"   \
-right_signs:="[-1,1,-1,-1,-1,1,-1,1]" \
+right_signs:="[-1,-1,-1,1,-1,1,-1,1]" \
 positions_log_path:=/home/kleist/jemotor/log/dynamixel_positions.log \
 zero_on_start:=false
 #plot

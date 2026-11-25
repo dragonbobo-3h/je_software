@@ -19,6 +19,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
+  <depend>ruckig</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>common</depend>

@@ -1,0 +1,3 @@
+#!/usr/bin/env python3
+from je_software.zmq_motion_backend_node import main
+main()

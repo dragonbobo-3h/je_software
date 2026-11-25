@@ -1,0 +1,16 @@
+{
+  "board_type": "ChArUco",
+  "squares_x": 7,
+  "squares_y": 5,
+  "square_length_mm": 49.5,
+  "marker_length_mm": 29.5,
+  "dictionary": "DICT_4X4_50",
+  "paper_width_mm": 420.0,
+  "paper_height_mm": 297.0,
+  "dpi": 300,
+  "board_width_mm": 348.0,
+  "board_height_mm": 249.7,
+  "margin_left_right_mm": 35.0,
+  "margin_top_bottom_mm": 23.4,
+  "print_note": "打印时请选择 100% / Actual Size / No scaling"
+}
